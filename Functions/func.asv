@@ -1,0 +1,8 @@
+function checkStatbility(lambda)
+    realParts = real(lambda);
+    if(all(realParts < 0))
+        disp("System is Asymptotically Stable")
+    end 
+    else if ()
+    
+end
