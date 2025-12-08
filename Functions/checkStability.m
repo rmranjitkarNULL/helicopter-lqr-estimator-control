@@ -1,16 +1,24 @@
-function checkStability(lambda)
+function [eigVals, asymStable, biboStable] = checkStability(A, sys)
 
-    tol = 1e-6;  % tolerance for floating point comparisons
-    realParts = real(lambda);
+    disp("Part 2 & 3 – Stability Analysis");
 
-    if all(realParts < -tol)
-        disp("System is Asymptotically Stable");
+    eigVals = eig(A);
+    disp("Eigenvalues:");
+    disp(eigVals);
 
-    elseif any(realParts > tol)
-        disp("System is Unstable");
+    asymStable = all(real(eigVals) < 0);
+    biboStable = isstable(sys);
 
+    if asymStable
+        disp("Asymptotically stable.");
     else
-        disp("System is Marginally Stable");
+        disp("NOT asymptotically stable.");
+    end
+
+    if biboStable
+        disp("BIBO stable.");
+    else
+        disp("BIBO UNSTABLE.");
     end
 
 end
