@@ -6,6 +6,17 @@
 clear; clc;
 syms s;
 
+%% =======================
+%  Global Plot Settings
+% =======================
+set(0, 'DefaultLineLineWidth', 2.5);
+set(0, 'DefaultAxesFontSize', 18);
+set(0, 'DefaultTextFontSize', 20);
+set(0, 'DefaultAxesLabelFontSizeMultiplier', 1.3);
+set(0, 'DefaultAxesTitleFontSizeMultiplier', 1.4);
+set(0, 'DefaultFigureColor', 'w'); % white background
+
+
 %% =======================================================================
 %   Part 1 – Load State-Space Model
 % ========================================================================
