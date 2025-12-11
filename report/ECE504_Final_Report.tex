@@ -1,0 +1,336 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath, amssymb, graphicx, float, geometry, setspace}
+\geometry{margin=1in}
+\setstretch{1.15}
+
+% ---------------------------------------------
+%               TITLE PAGE
+% ---------------------------------------------
+\begin{document}
+\begin{titlepage}
+    \centering
+    {\large Worcester Polytechnic Institute}\\[0.25cm]
+    {\large Department of Electrical and Computer Engineering}\\[1.5cm]
+
+    {\Large \textbf{ECE 505 – Analysis of Deterministic Signals and Systems}}\\[0.5cm]
+    {\Large \textbf{Final Project Report}}\\[1cm]
+
+    {\Large \textbf{Helicopter Control System:\\
+    Stability Analysis, LQR Control, Estimation,\\
+    Output Feedback, and Reference Tracking}}\\[1.5cm]
+
+    {\large Instructor: Dr.\ Bo Tang}\\[0.5cm]
+
+    {\large Student: Ryan Ranjitkar}\\[2cm]
+
+    {\large \today}
+
+    \vfill
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ---------------------------------------------
+%               INTRODUCTION
+% ---------------------------------------------
+\section{Introduction}
+This report presents a complete analysis and control design for a multivariable helicopter system
+using state-space methods covered in ECE~505. The system represents a twin-engine helicopter
+with eight states, four control inputs, and six outputs. The objective is to evaluate stability,
+determine controllability and observability, design a stabilizing Linear Quadratic Regulator (LQR),
+compute a full-state estimator, synthesize a dynamic output-feedback controller, and finally design
+a reference-tracking controller for the first output channel.
+
+The helicopter considered in this study is a high-dimensional, multi-input multi-output (MIMO)
+linearized model representative of a twin-engine aircraft equipped with independent rotor blade
+controls. Such systems are inherently complex due to aerodynamic coupling, nonlinearities, and
+cross-axis interactions. The purpose of this project is to explore how classical state-space techniques
+can be used to stabilize and control such a system, which would otherwise be extremely difficult for
+manual control.
+
+The MATLAB implementation follows a structured workflow, beginning with open-loop
+characterization and concluding with a fully integrated observer-based controller capable of
+accurate reference tracking. Each step illustrates the practical considerations behind real-world
+flight control systems.
+
+% ---------------------------------------------
+%           SYSTEM DESCRIPTION
+% ---------------------------------------------
+\section{System Description}
+
+\subsection{State-Space Model}
+The helicopter dynamics are given by:
+\[
+\dot{x} = Ax + Bu, \qquad y = Cx + Du
+\]
+
+The system has 8 states, 4 inputs, and 6 outputs.  
+The state variables consist of angular attitudes, angular rates, and translational velocities,
+capturing rigid-body rotorcraft dynamics. The system's structure shows strong coupling between
+attitude, velocity, and rotor-induced aerodynamic forces, making decoupled single-input control
+infeasible.
+
+The matrices below represent the full linearized dynamics.
+
+\subsubsection*{Matrix \(A\)}
+{\small
+\[
+A =
+\begin{bmatrix}
+0 & 0 & 0 & 0.9986 & 0.05338 & 0 & 0 & 0 \\
+0 & 0 & 1 & -0.003182 & 0.05952 & 0 & 0 & 0 \\
+0 & 0 & -11.5705 & -2.5446 & -0.06360 & 0.10678 & -0.09492 & 0.007108 \\
+0 & 0 & 0.43936 & -1.99818 & 0 & 0.016651 & 0.018462 & -0.001187 \\
+0 & 0 & -2.0409 & -0.458999 & -0.73503 & 0.019256 & -0.004596 & 0.002120 \\
+-32.1036 & 0 & -0.503355 & 2.29786 & 0 & -0.021216 & -0.021168 & 0.015812 \\
+0.102161 & 32.05783 & -2.34722 & -0.503611 & 0.834948 & 0.021227 & -0.037880 & 0.000354 \\
+-1.91097 & 1.713829 & -0.004005 & -0.057411 & 0 & 0.0139896 & -0.0009068 & -0.290514
+\end{bmatrix}
+\]
+}
+
+\subsubsection*{Matrix \(B\)}
+{\small
+\[
+B =
+\begin{bmatrix}
+0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 \\
+0.124335 & 0.082786 & -2.75248 & -0.017889 \\
+-0.036359 & 0.475095 & 0.014291 & 0 \\
+0.304492 & 0.014958 & -0.496518 & -0.206742 \\
+0.287735 & -0.544506 & -0.016379 & 0 \\
+-0.019073 & 0.016367 & -0.544536 & 0.234842 \\
+-4.82063 & -0.000381 & 0 & 0
+\end{bmatrix}
+\]
+}
+
+\subsubsection*{Matrix \(C\)}
+{\small
+\[
+C =
+\begin{bmatrix}
+0 & 0 & 0 & 0 & 0 & 0.0595 & 0.05329 & -0.9968 \\
+1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & -0.05348 & 1 & 0 & 0 & 0 \\
+0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 1 & 0 & 0 & 0 & 0
+\end{bmatrix}
+\]
+}
+
+\subsubsection*{Matrix \(D\)}
+\[
+D = 0_{6 \times 4}
+\]
+
+% ---------------------------------------------
+%           STABILITY ANALYSIS
+% ---------------------------------------------
+\section{Stability Analysis}
+
+\subsection{Eigenvalues of \(A\)}
+The eigenvalues of the open-loop system are:
+\[
+\lambda(A) =
+\begin{cases}
+-11.4968,\; -2.3036,\; -0.7104,\; -0.2923, \\
+-0.1593 \pm 0.5990i,\; 0.2342 \pm 0.5513i
+\end{cases}
+\]
+
+Two eigenvalues have positive real parts, demonstrating that the system is inherently unstable.
+Several others lie close to the imaginary axis, revealing lightly damped oscillatory modes that
+would make the helicopter difficult to control without feedback. This behavior is consistent with
+real aircraft, which often rely on active stabilization systems.
+
+\subsection{BIBO Stability}
+MATLAB returned:
+\[
+\texttt{System is BIBO UNSTABLE}
+\]
+because unstable internal poles guarantee that bounded inputs can produce unbounded outputs.
+
+% ---------------------------------------------
+%           TRANSFER FUNCTION
+% ---------------------------------------------
+\section{Transfer Function \(G_{11}(s)\)}
+
+\[
+G_{11}(s) =
+\frac{4.821 s^7 + 69.23 s^6 + 167.5 s^5 + 106.2 s^4 + 86.83 s^3 + 52.51 s^2 + 18.26 s + 12.6}
+{s^8 + 14.65 s^7 + 38.91 s^6 + 32.07 s^5 + 24.32 s^4 + 16.02 s^3 + 6.919 s^2 + 3.694 s + 0.7579}
+\]
+
+This transfer function reveals the high-order nature of the helicopter’s internal dynamics. The
+multiple poles represent various aerodynamic and inertial modes, including oscillatory
+components, and emphasize why simple PID control would be insufficient.
+
+% ---------------------------------------------
+%           STEP RESPONSE
+% ---------------------------------------------
+\section{Open-Loop Step Response}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{Part 5: Step Response (All Inputs).png}
+\caption{Open-loop output responses to a unit step input.}
+\end{figure}
+
+The open-loop step response exhibits divergence and oscillation, which is expected due to the
+unstable poles identified earlier. This reinforces the need for active stabilization.
+
+% ---------------------------------------------
+% CONTROLLABILITY / OBSERVABILITY
+% ---------------------------------------------
+\section{Controllability and Observability}
+
+\[
+\texttt{(A,B) CONTROLLABLE}, \qquad 
+\texttt{(A,C) OBSERVABLE}
+\]
+
+Full controllability ensures that every state can be influenced by the input vector, enabling pole
+placement and LQR control. Full observability confirms that all states can be reconstructed from
+measurements, allowing reliable estimator design.
+
+% ---------------------------------------------
+%               LQR CONTROLLER
+% ---------------------------------------------
+\section{LQR State-Feedback Control}
+
+The LQR controller computes the optimal feedback matrix \(K\) to minimize a quadratic cost
+balancing state deviation and control effort. Choosing \(Q = C^T C\) emphasizes regulation of
+measured output variables, while \(R = 0.1I\) penalizes excessive actuator use without overly
+restricting control authority.
+
+\subsection{Gain Matrix \(K\)}
+\[
+K =
+\begin{bmatrix}
+0.0237 & 0.0313 & -0.0003 & 0.0294 & 0.1442 & 0.1851 & 0.1684 & -3.0898 \\
+4.5931 & -0.3917 & 0.0245 & 2.6117 & 0.0809 & -0.0160 & 0.0333 & 0.0017 \\
+-0.3604 & -4.5365 & -1.2938 & 0.0189 & -0.4927 & -0.0328 & -0.0243 & -0.0323 \\
+-0.1894 & -0.2906 & 0.1756 & -0.0082 & -1.2052 & 0.0034 & -0.0079 & -0.0733
+\end{bmatrix}
+\]
+
+\subsection{Closed-Loop Eigenvalues}
+\[
+\lambda(A-BK) = 
+\begin{cases}
+-15.4005,\; -14.3686,\; -2.6529,\; -0.9874, \\
+-0.3928 \pm 0.4660i,\; -0.3816 \pm 0.4078i
+\end{cases}
+\]
+
+These eigenvalues show strong damping and negative real parts, indicating that the LQR controller
+achieves rapid, stable convergence.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{Part 7: Closed-Loop Step Response (LQR).png}
+\caption{Closed-loop LQR step response.}
+\end{figure}
+
+% ---------------------------------------------
+%               OBSERVER
+% ---------------------------------------------
+\section{Full-State Estimator}
+
+Because not all states are measurable, a full-state estimator (Luenberger observer) is constructed.
+The estimator poles were selected as three times the magnitude of the LQR closed-loop poles,
+ensuring the observer dynamics are significantly faster than the controlled system’s dynamics.
+
+\subsection{Observer Gain \(L\)}
+{\small
+\[
+L =
+\begin{bmatrix}
+0.0218 & 25.1799 & -17.5708 & 0.0065 & 0.0067 & 1.0062 \\
+-0.0224 & -17.5708 & 25.8865 & 0.1077 & 0.9931 & -0.0049 \\
+2.2428 & 0.0067 & -0.0069 & -5.0673 & -8.5456 & -2.1556 \\
+2.2441 & 0.0073 & -0.0075 & -5.5362 & 1.3133 & 1.0036 \\
+-16.0347 & -0.0469 & 0.0481 & 36.4455 & -6.9629 & -4.0721 \\
+25.5205 & -32.1023 & -0.0013 & 21.6036 & 18.4949 & 56.6423 \\
+31.1588 & 0.1033 & 32.0566 & 22.1661 & -14.2314 & 62.7225 \\
+-6.7984 & -1.9327 & 1.7361 & 18.4984 & -1.8654 & 5.1659
+\end{bmatrix}
+\]
+}
+
+\subsection{Augmented Closed-Loop Eigenvalues}
+\[
+\lambda(A_{\text{aug}}) = 
+\{-46.20,\;-43.10,\;-15.40,\;-14.37,\;-7.96,\;-2.96,\;-2.65,\ldots\}
+\]
+
+All eigenvalues lie safely in the left half-plane, confirming stable observer–controller integration.
+
+% ---------------------------------------------
+%           OUTPUT FEEDBACK RESPONSE
+% ---------------------------------------------
+\section{Output Feedback Response}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{Part 8: Output Feedback Response.png}
+\caption{Closed-loop output-feedback response.}
+\end{figure}
+
+The observer-based controller successfully replicates the LQR closed-loop behavior. The estimator
+rapidly reconstructs the system states, enabling effective stabilization using only output
+measurements.
+
+% ---------------------------------------------
+%           ZERO-INPUT RESPONSE
+% ---------------------------------------------
+\section{Zero-Input Response}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{Part 10: Zero-Input Response.png}
+\caption{Zero-input response of the output-feedback closed-loop system.}
+\end{figure}
+
+The system quickly returns to equilibrium after being perturbed, demonstrating strong
+disturbance-rejection characteristics.
+
+% ---------------------------------------------
+%           REFERENCE TRACKING
+% ---------------------------------------------
+\section{Reference Tracking for \(y_1(t)\)}
+
+The reference gain is:
+\[
+N = 3.1651
+\]
+
+This gain ensures that the closed-loop system accurately tracks a step reference applied to the first
+output channel. The controller modifies the effective DC gain of the closed-loop system so that the
+steady-state error becomes zero.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{Part 11: Reference Tracking (y1).png}
+\caption{Tracking response of \(y_1(t)\) with step reference.}
+\end{figure}
+
+% ---------------------------------------------
+%               CONCLUSION
+% ---------------------------------------------
+\section{Conclusion}
+The helicopter system was shown to be open-loop unstable but fully controllable and observable.
+An LQR controller successfully stabilized the dynamics, while a full-state estimator enabled
+implementation of a dynamic output-feedback controller suitable for real-world applications where
+not all states are measurable.
+
+The combined controller–estimator structure achieved fast settling times, strong damping, and
+robust asymptotic stability. Reference tracking for the first output was accomplished through a
+feedforward gain that eliminates steady-state error. The complete workflow demonstrates how
+state-space tools can transform an unstable aircraft model into a well-regulated system capable of
+precise command tracking.
+
+\end{document}
