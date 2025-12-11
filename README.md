@@ -1,144 +1,102 @@
-ECE 504 Final Project – Helicopter Control System
+# ECE 504 Final Project – Helicopter Control System
 
-This repository contains the MATLAB implementation and report for the ECE 504 Final Project at Worcester Polytechnic Institute. The project focuses on analyzing and designing controllers for a linearized helicopter model using state-space techniques, optimal control, and observer-based output feedback.
+This repository contains the MATLAB implementation and report for the ECE 504 Final Project at Worcester Polytechnic Institute. The project analyzes a linearized helicopter model and designs a complete state-space control architecture, including LQR regulation, full-state estimation, and output-feedback tracking control.
 
-Project Overview
+---
 
-The goal of this project is to study the behavior of a multivariable helicopter system and design a full-state feedback control architecture capable of stabilizing the system and tracking reference commands. The helicopter model is an 8-state, 4-input, 6-output linearized representation of a twin-engine rotorcraft.
+## Overview
 
-The project consists of the following main components:
+The objective of this project is to study the dynamics of an unstable multivariable helicopter system and develop a stabilizing control strategy. The helicopter model is an 8-state, 4-input, 6-output linearized representation of a twin-engine rotorcraft. The project includes:
 
-Loading and examining the helicopter state-space model
+- Stability analysis through eigenvalue evaluation  
+- BIBO stability assessment  
+- Transfer function extraction  
+- Open-loop system simulation  
+- Controllability and observability verification  
+- LQR controller design  
+- Full-state Luenberger observer design  
+- Dynamic output-feedback controller synthesis  
+- Zero-input (disturbance) response analysis  
+- Reference tracking using feedforward gain design  
 
-Open-loop stability analysis using eigenvalues and BIBO tests
+The MATLAB code automatically generates plots and saves figures for use in the final report.
 
-Transfer function extraction for individual input–output channels
+---
 
-Open-loop step response analysis
+## MATLAB Script Description
 
-Controllability and observability verification
+The primary script is `src/Main.m`, which executes all sections of the project. A summary of each part is included below:
 
-LQR state-feedback controller design
+### Part 1: Load State-Space Model
+Loads matrices \( A, B, C, D \) using `helecopterModel()`.
 
-Full-state estimator (Luenberger observer) design
+### Part 2: Stability Analysis
+Computes eigenvalues of \( A \) and determines asymptotic stability.
 
-Dynamic output-feedback controller construction
+### Part 3: BIBO Stability
+Uses MATLAB’s `isstable()` to evaluate input–output stability.
 
-Closed-loop simulations for step responses and disturbance rejection
+### Part 4: Transfer Function
+Extracts the scalar transfer function \( G_{11}(s) \) from input \( u_1 \) to output \( y_1 \).
 
-Reference tracking for the first output channel using feedforward gain design
+### Part 5: Open-Loop Step Response
+Simulates output behavior under a step input applied to all input channels.
 
-Repository Structure
-.
-├── src/
-│   ├── helecopterModel.m             # Helicopter state-space matrices
-│   ├── final_project.m               # Main MATLAB script running all parts
-│   ├── figs/                         # Auto-generated PNG figures from MATLAB
-│   └── utils/                        # Optional helper functions
-│
-├── report/
-│   ├── ECE504_FinalProject_Report.tex   # Full LaTeX project report
-│   └── ECE504_FinalProject_Report.pdf   # Compiled report (if included)
-│
-├── README.md
-└── LICENSE (optional)
+### Part 6: Controllability and Observability
+Verifies rank conditions using `ctrb()` and `obsv()`.
 
-MATLAB Script Description
+### Part 7: LQR Controller Design
+Computes optimal feedback gain \(K\), evaluates closed-loop eigenvalues, and plots step responses.
 
-The main script (final_project.m) completes all portions of the assignment:
+### Part 8: Full-State Estimator
+Designs a Luenberger observer using pole placement.
 
-Part 1: Load State-Space Model
+### Part 9: Output-Feedback Control
+Constructs the observer–controller augmented system and simulates closed-loop behavior.
 
-Imports A, B, C, D matrices using helecopterModel().
+### Part 10: Zero-Input Response
+Simulates response due to nonzero initial conditions to evaluate disturbance rejection.
 
-Part 2: Stability Analysis
+### Part 11: Reference Tracking
+Computes feedforward gain \(N\) and demonstrates accurate step tracking for the first output.
 
-Computes eigenvalues of A and evaluates asymptotic and BIBO stability.
+All generated figures are saved into the `figures/` directory for use in the report.
 
-Part 3: Transfer Function
+---
 
-Extracts the first input–output transfer function 
-𝐺11(𝑠)
-G
-11
-	​
+## How to Run
 
-(s).
+1. Clone the repository:
+```bash
+git clone https://github.com/rmranjitkarNULL/helicopter-lqr-estimator-control.git
+```
 
-Part 4: Open-Loop Response
+3. Open MATLAB and navigate to the src/ folder
 
-Simulates step responses for all outputs under a combined step input.
+4. Run the main script:
 
-Part 5: Controllability/Observability
+5. The script will:
+- Simulate all system responses,
+- Print analysis results to the console,
+- Print figues of responses
 
-Checks rank conditions for system controllability and observability.
+## Requirements
+- MATLAB R2020a or newer
+- Control System Toolbox
+- Signal Processing Toolbox (optional)
 
-Part 6: LQR Controller
+# Summary of Results
+- The helicopter system is open-loop unstable.
+- It is fully controllable and observable.
+- The LQR controller stabilizes the system and provides well-damped dynamics.
+- The full-state estimator reconstructs all states accurately.
+- The observer-based output-feedback controller maintains stability and performs comparably to full-state feedback.
+- The reference tracking controller ensures zero steady-state error for the first output.
 
-Designs a stabilizing LQR gain matrix K, verifies closed-loop eigenvalues, and simulates step responses.
+Complete discussion and analysis are documented in the LaTeX report.
 
-Part 7: State Estimator
+# Author
 
-Constructs a full-order Luenberger observer with appropriately placed poles.
-
-Part 8: Output Feedback Control
-
-Builds the dynamic compensator (observer + state feedback) and simulates closed-loop performance.
-
-Part 9: Zero-Input Response
-
-Simulates disturbance rejection using initial conditions.
-
-Part 10: Reference Tracking
-
-Computes and applies a feedforward gain N to ensure 
-𝑦1(𝑡)
-y
-1
-	​
-
-(t) tracks step commands with zero steady-state error.
-
-All figures generated are automatically saved as high-resolution PNG files.
-
-How to Run the Code
-
-Clone the repository:
-
-git clone https://github.com/yourusername/ECE504-HelicopterControl.git
-
-
-Open MATLAB and navigate to the src/ directory.
-
-Run the main script:
-
-final_project
-
-
-All plots will appear automatically and be saved in the figs/ folder.
-
-Requirements
-
-MATLAB R2020a or newer
-
-Control System Toolbox
-
-Symbolic Math Toolbox (optional, minimal use)
-
-Results Summary
-
-Key outcomes of the project:
-
-The helicopter system is open-loop unstable.
-
-The system is fully controllable and observable.
-
-LQR feedback stabilizes the system and produces well-damped dynamics.
-
-The full-state estimator reconstructs all states accurately.
-
-The combined observer-based controller achieves stable output feedback control.
-
-The feedforward gain ensures exact reference tracking for the first output channel.
-
-All results are documented in the final report with accompanying figures.
+Ryan Ranjitkar
+Worcester Polytechnic Institute
+ECE 504 – Fall 2025
